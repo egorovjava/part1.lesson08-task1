@@ -1,5 +1,6 @@
 package com.gmail.egorovsonalexey;
 
+import com.gmail.egorovsonalexey.exeptions.IncorrectFieldException;
 import org.junit.Test;
 
 import java.io.*;

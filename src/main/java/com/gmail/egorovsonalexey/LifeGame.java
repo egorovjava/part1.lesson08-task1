@@ -1,7 +1,10 @@
 package com.gmail.egorovsonalexey;
 
+import com.gmail.egorovsonalexey.exeptions.IncorrectFieldException;
+
 import java.io.*;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 class LifeGame {
 
@@ -37,7 +40,12 @@ class LifeGame {
         if(threadCount > size) {
             throw new IllegalArgumentException("Thread count mast be less than or equals game field size.");
         }
-        field.processMt(stepCount, threadCount);
+
+        try {
+            field.processMt(stepCount, threadCount);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     private int[][] gameFieldLoad(String fileName) throws IOException {

@@ -1,17 +1,17 @@
 package com.gmail.egorovsonalexey;
 
+import com.gmail.egorovsonalexey.exeptions.IncorrectFieldException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
 
 class GameField {
-
     private int[][] position;
     private int[][] nextPosition;
     private int[][] neighbors;
     private int[][] nextNeighbors;
-
-    private int[][][] city;
 
     private int size;
 
@@ -91,7 +91,7 @@ class GameField {
         }
     }
 
-    private void step(int threadNum, int threadsCount) {
+    void step(int threadNum, int threadsCount, int[][] neighbors) {
         int upBound = threadNum * (size / threadsCount);
         int bottomBound = (threadNum + 1) * (size / threadsCount);
         if(threadNum == threadsCount - 1) {
@@ -100,29 +100,28 @@ class GameField {
 
         for(int x = upBound; x < bottomBound; x++) {
             for(int y = 0; y < size; y++) {
-               processCell(x, y, city[threadNum]);
+               processCell(x, y, neighbors);
             }
         }
     }
 
-    void processMt(int stepCount, int threadsCount) throws InterruptedException {
+    void processMt(int stepCount, int threadsCount) throws InterruptedException, ExecutionException {
 
-        ArrayList<Callable<Object>> threads = new ArrayList<>();
+        ArrayList<Callable<int[][]>> threads = new ArrayList<>();
         final ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
         for(int i = 0; i < threadsCount; i++) {
-            threads.add(Executors.callable(new ProcessThread(this, i, threadsCount)));
+            threads.add(new GameThread(this, i, threadsCount));
         }
 
         for(int i = 0; i < stepCount; i++) {
-            city = new int[threadsCount][size][size];
-            executor.invokeAll(threads);
+            List<Future<int[][]>> fList = executor.invokeAll(threads);
 
             position = nextPosition;
             nextPosition = new int[size][size];
-            for(int s = 0; s < threadsCount; s++) {
+            for(Future<int[][]> future : fList) {
                 for (int j = 0; j < size; j++) {
                     for (int k = 0; k < size; k++) {
-                        neighbors[j][k] += city[s][j][k];
+                        neighbors[j][k] += future.get()[j][k];
                     }
                 }
             }
@@ -154,30 +153,5 @@ class GameField {
     int getSize() {
         return size;
     }
-
-    class ProcessThread extends Thread {
-
-        int threadNumber;
-        int threadsCount;
-        GameField field;
-
-        ProcessThread(GameField f, int n, int count) {
-            field = f;
-            threadNumber = n;
-            threadsCount = count;
-        }
-
-        @Override
-        public void run() {
-            field.step(threadNumber, threadsCount);
-        }
-    }
 }
 
-
-class IncorrectFieldException extends Exception {
-
-    IncorrectFieldException(String message) {
-        super(message);
-    }
-}
